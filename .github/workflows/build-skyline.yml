@@ -19,7 +19,7 @@ jobs:
         with:
           repository: skyline-emu/skyline
           path: skyline
-          submodules: recursive
+          submodules: false
           fetch-depth: 0
 
       - name: Setup Java 17
@@ -32,6 +32,16 @@ jobs:
         uses: nttld/setup-ndk@v1
         with:
           ndk-version: r25c
+
+      - name: Patch Dead Submodules (Nintendo DMCA fix)
+        run: |
+          cd skyline
+          # O repositório oficial do Skyline está quebrado pois a Nintendo derrubou
+          # os submódulos de shader-compiler e sirit. Precisamos usar mirrors.
+          sed -i 's/https:\/\/github.com\/skyline-emu\/shader-compiler.git/https:\/\/github.com\/strato-emu\/shader-compiler.git/g' .gitmodules || true
+          sed -i 's/https:\/\/github.com\/yuzu-emu\/sirit/https:\/\/github.com\/suyu-emu\/sirit.git/g' .gitmodules || true
+          git submodule sync
+          git submodule update --init --recursive
 
       - name: Inject MTK Optimizations
         run: |
