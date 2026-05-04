@@ -38,8 +38,8 @@ jobs:
           cd skyline
           # O repositório oficial do Skyline está quebrado pois a Nintendo derrubou
           # os submódulos de shader-compiler e sirit. Precisamos usar mirrors.
-          sed -i 's/https:\/\/github.com\/skyline-emu\/shader-compiler.git/https:\/\/github.com\/strato-emu\/shader-compiler.git/g' .gitmodules || true
-          sed -i 's/https:\/\/github.com\/yuzu-emu\/sirit/https:\/\/github.com\/suyu-emu\/sirit.git/g' .gitmodules || true
+          sed -i 's|url = .*shader-compiler.*|url = https://github.com/strato-emu/shader-compiler.git|g' .gitmodules || true
+          sed -i 's|url = .*sirit.*|url = https://github.com/suyu-emu/sirit.git|g' .gitmodules || true
           git submodule sync
           git submodule update --init --recursive
 
