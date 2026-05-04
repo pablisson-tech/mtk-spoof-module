@@ -1,0 +1,6 @@
+id=mtk_spoof_emu
+name=MediaTek to Snapdragon Emulator Spoofer
+version=v1.1
+versionCode=2
+author=Antigravity
+description=Camufla processadores MediaTek e GPUs Mali como Snapdragon/Adreno em emuladores via Zygisk. Suporta Yuzu, Sudachi, Winlator, Termux-X11, AetherSX2 e mais.

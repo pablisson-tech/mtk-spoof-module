@@ -1,0 +1,48 @@
+name: Build Magisk Module
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: 'recursive'
+
+    - name: Set up Android NDK
+      uses: nttld/setup-ndk@v1
+      with:
+        ndk-version: r26b
+
+    - name: Download Zygisk Header
+      run: |
+        curl -O https://raw.githubusercontent.com/topjohnwu/Magisk/master/native/src/zygisk/zygisk.hpp
+        mv zygisk.hpp module/jni/
+
+    - name: Download Dobby
+      run: |
+        git clone https://github.com/jmpews/Dobby.git module/jni/dobby
+
+    - name: Build Module with ndk-build
+      run: |
+        cd module/jni
+        ndk-build NDK_PROJECT_PATH=. APP_BUILD_SCRIPT=Android.mk NDK_APPLICATION_MK=Application.mk
+
+    - name: Package Magisk Zip
+      run: |
+        mkdir -p out/zygisk/arm64-v8a
+        cp module/jni/libs/arm64-v8a/libmtk_spoof.so out/zygisk/arm64-v8a.so
+        cp module/module.prop out/
+        cp module/customize.sh out/
+        cd out
+        zip -r9 ../MtkToSnapdragon-v1.1.zip .
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: MtkToSnapdragon-Magisk-Module
+        path: MtkToSnapdragon-v1.1.zip
