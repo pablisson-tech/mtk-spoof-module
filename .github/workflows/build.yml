@@ -20,22 +20,28 @@ jobs:
 
     - name: Download Zygisk Header
       run: |
-        curl -O https://raw.githubusercontent.com/topjohnwu/Magisk/master/native/src/zygisk/zygisk.hpp
+        curl -L -o zygisk.hpp https://raw.githubusercontent.com/topjohnwu/zygisk-module-sample/master/module/jni/zygisk.hpp
         mv zygisk.hpp module/jni/
 
     - name: Download Dobby
       run: |
         git clone https://github.com/jmpews/Dobby.git module/jni/dobby
 
-    - name: Build Module with ndk-build
+    - name: Build Module with CMake
       run: |
         cd module/jni
-        ndk-build NDK_PROJECT_PATH=. APP_BUILD_SCRIPT=Android.mk NDK_APPLICATION_MK=Application.mk
+        cmake -B build \
+          -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake \
+          -DANDROID_ABI=arm64-v8a \
+          -DANDROID_PLATFORM=android-28 \
+          -DCMAKE_BUILD_TYPE=Release
+        cmake --build build -j$(nproc)
 
     - name: Package Magisk Zip
       run: |
         mkdir -p out/zygisk/arm64-v8a
-        cp module/jni/libs/arm64-v8a/libmtk_spoof.so out/zygisk/arm64-v8a.so
+        # Copy the compiled shared library
+        cp module/jni/build/libmtk_spoof.so out/zygisk/arm64-v8a.so
         cp module/module.prop out/
         cp module/customize.sh out/
         cd out
