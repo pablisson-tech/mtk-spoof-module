@@ -4,22 +4,17 @@
 #include <unistd.h>
 #include <dlfcn.h>
 #include <android/log.h>
-#include "zygisk.hpp"
 #include "And64InlineHook.hpp"
 #include "vulkan_hook.h"
 
-#define LOG_TAG "MTK_SPOOF"
+#define LOG_TAG "MTK_SPOOF_DRIVER"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
-
-using zygisk::Api;
-using zygisk::AppSpecializeArgs;
-using zygisk::ServerSpecializeArgs;
 
 // --- DADOS FALSOS (SNAPDRAGON 8 GEN 1) ---
 const char* FAKE_BOARD = "taro";
 const char* FAKE_MODEL = "SM8450";
 const char* FAKE_HARDWARE = "qcom";
-const char* FAKE_PLATFORM = "msm8998"; // Para Winlator ou exagear às vezes precisa ser msm
+const char* FAKE_PLATFORM = "msm8998";
 const char* FAKE_GPU = "Adreno (TM) 730";
 
 // --- HOOK PARA __system_property_get ---
@@ -49,65 +44,23 @@ long my_sysconf(int name) {
     return orig_sysconf(name);
 }
 
-class MtkSpoofModule : public zygisk::ModuleBase {
-public:
-    void onLoad(Api *api, JNIEnv *env) override {
-        this->api = api;
-        this->env = env;
-    }
-
-    void preAppSpecialize(AppSpecializeArgs *args) override {
-        const char *process_name = env->GetStringUTFChars(args->nice_name, nullptr);
-        
-        bool is_emulator = false;
-        const char* emulators[] = {
-            "org.yuzu.yuzu_emu",
-            "org.yuzu.suyu_emu",
-            "org.yuzu.sudachi_emu",
-            "skyline.emu",
-            "com.winlator",
-            "com.termux.x11",
-            "com.emulator.fpse",
-            "org.ppsspp.ppsspp",
-            "xyz.aethersx2.android",
-            "com.aethersx2.android",
-            "org.dolphinemu.dolphinemu"
-        };
-
-        for (const char* emu : emulators) {
-            if (strstr(process_name, emu)) {
-                is_emulator = true;
-                break;
-            }
+// O emulador vai usar dlopen() na nossa biblioteca. Assim que for carregada na memória, essa função é disparada:
+__attribute__((constructor))
+void spoof_init() {
+    LOGI("Custom Driver Init: Injetando hooks de propriedade...");
+    
+    void* libc = dlopen("libc.so", RTLD_NOW);
+    if (libc) {
+        void* prop_get = dlsym(libc, "__system_property_get");
+        if (prop_get) {
+            A64HookFunction(prop_get, (void *)my_system_property_get, (void **)&orig_system_property_get);
         }
-        
-        if (is_emulator) {
-            LOGI("MtkSpoof: Interceptando emulador -> %s", process_name);
-            do_hook();
+        void* sysconf_ptr = dlsym(libc, "sysconf");
+        if (sysconf_ptr) {
+            A64HookFunction(sysconf_ptr, (void *)my_sysconf, (void **)&orig_sysconf);
         }
-        
-        env->ReleaseStringUTFChars(args->nice_name, process_name);
     }
-
-private:
-    Api *api;
-    JNIEnv *env;
-
-    void do_hook() {
-        void* libc = dlopen("libc.so", RTLD_NOW);
-        if (libc) {
-            void* prop_get = dlsym(libc, "__system_property_get");
-            if (prop_get) {
-                A64HookFunction(prop_get, (void *)my_system_property_get, (void **)&orig_system_property_get);
-            }
-            void* sysconf_ptr = dlsym(libc, "sysconf");
-            if (sysconf_ptr) {
-                A64HookFunction(sysconf_ptr, (void *)my_sysconf, (void **)&orig_sysconf);
-            }
-        }
-        
-        setup_vulkan_hooks();
-    }
-};
-
-REGISTER_ZYGISK_MODULE(MtkSpoofModule)
+    
+    // Inicia o Vulkan Proxy
+    setup_vulkan_hooks();
+}

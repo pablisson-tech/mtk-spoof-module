@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "name": "MediaTek to Adreno Spoof",
+  "description": "Falsifica a identificação da GPU/CPU para emuladores",
+  "author": "Antigravity",
+  "packageVersion": "1.1",
+  "vendor": "Qualcomm",
+  "driverVersion": "512.502"
+}

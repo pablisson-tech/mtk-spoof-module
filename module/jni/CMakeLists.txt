@@ -6,8 +6,8 @@ set(CMAKE_CXX_STANDARD 17)
 # Inclui os cabeçalhos locais
 include_directories(.)
 
-# Nosso módulo nativo
-add_library(mtk_spoof SHARED main.cpp vulkan_hook.cpp And64InlineHook.cpp)
+# Nosso módulo nativo (Driver proxy)
+add_library(vulkan.mtkspoof SHARED main.cpp vulkan_hook.cpp And64InlineHook.cpp)
 
 # Link com o log e libdl
-target_link_libraries(mtk_spoof log dl)
+target_link_libraries(vulkan.mtkspoof log dl)
