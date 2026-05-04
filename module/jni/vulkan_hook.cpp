@@ -3,7 +3,7 @@
 #include <string.h>
 #include <vector>
 #include <dlfcn.h>
-#include "dobby.h"
+#include "And64InlineHook.hpp"
 
 static VkResult (*orig_vkEnumerateDeviceExtensionProperties)(
     VkPhysicalDevice physicalDevice,
@@ -55,7 +55,7 @@ void setup_vulkan_hooks() {
     if (vulkan_lib) {
         void *target_func = dlsym(vulkan_lib, "vkEnumerateDeviceExtensionProperties");
         if (target_func) {
-            DobbyHook(target_func, (void *)my_vkEnumerateDeviceExtensionProperties, (void **)&orig_vkEnumerateDeviceExtensionProperties);
+            A64HookFunction(target_func, (void *)my_vkEnumerateDeviceExtensionProperties, (void **)&orig_vkEnumerateDeviceExtensionProperties);
         }
     }
 }

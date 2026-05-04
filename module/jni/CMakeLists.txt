@@ -6,15 +6,8 @@ set(CMAKE_CXX_STANDARD 17)
 # Inclui os cabeçalhos locais
 include_directories(.)
 
-# Configura o Dobby como um subprojeto CMake
-set(DOBBY_DEBUG OFF CACHE BOOL "" FORCE)
-add_subdirectory(dobby)
-
 # Nosso módulo nativo
-add_library(mtk_spoof SHARED main.cpp vulkan_hook.cpp)
+add_library(mtk_spoof SHARED main.cpp vulkan_hook.cpp And64InlineHook.cpp)
 
-# Adiciona o diretório de inclusão do Dobby
-target_include_directories(mtk_spoof PRIVATE dobby/include)
-
-# Link com o log, libdl, e a biblioteca dobby estática
-target_link_libraries(mtk_spoof log dl dobby_static)
+# Link com o log e libdl
+target_link_libraries(mtk_spoof log dl)

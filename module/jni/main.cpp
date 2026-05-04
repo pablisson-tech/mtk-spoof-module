@@ -5,7 +5,7 @@
 #include <dlfcn.h>
 #include <android/log.h>
 #include "zygisk.hpp"
-#include "dobby.h"
+#include "And64InlineHook.hpp"
 #include "vulkan_hook.h"
 
 #define LOG_TAG "MTK_SPOOF"
@@ -98,11 +98,11 @@ private:
         if (libc) {
             void* prop_get = dlsym(libc, "__system_property_get");
             if (prop_get) {
-                DobbyHook(prop_get, (void *)my_system_property_get, (void **)&orig_system_property_get);
+                A64HookFunction(prop_get, (void *)my_system_property_get, (void **)&orig_system_property_get);
             }
             void* sysconf_ptr = dlsym(libc, "sysconf");
             if (sysconf_ptr) {
-                DobbyHook(sysconf_ptr, (void *)my_sysconf, (void **)&orig_sysconf);
+                A64HookFunction(sysconf_ptr, (void *)my_sysconf, (void **)&orig_sysconf);
             }
         }
         

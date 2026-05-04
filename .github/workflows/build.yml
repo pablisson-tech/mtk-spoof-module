@@ -22,9 +22,12 @@ jobs:
         curl -L -o zygisk.hpp https://raw.githubusercontent.com/topjohnwu/zygisk-module-sample/master/module/jni/zygisk.hpp
         mv zygisk.hpp module/jni/
 
-    - name: Download Dobby
+    - name: Download And64InlineHook
       run: |
-        git clone https://github.com/jmpews/Dobby.git module/jni/dobby
+        curl -L -o And64InlineHook.hpp https://raw.githubusercontent.com/Rprop/And64InlineHook/master/And64InlineHook.hpp
+        curl -L -o And64InlineHook.cpp https://raw.githubusercontent.com/Rprop/And64InlineHook/master/And64InlineHook.cpp
+        mv And64InlineHook.hpp module/jni/
+        mv And64InlineHook.cpp module/jni/
 
     - name: Build Module with CMake
       run: |
