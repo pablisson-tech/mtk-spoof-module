@@ -1,0 +1,73 @@
+name: Build Skyline Edge (MTK Edition)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build Skyline APK
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout our repository (Otimizações MTK)
+        uses: actions/checkout@v4
+        with:
+          path: mtk_spoof
+
+      - name: Checkout Skyline Emulator
+        uses: actions/checkout@v4
+        with:
+          repository: skyline-emu/skyline
+          path: skyline
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Android NDK
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r25c
+
+      - name: Inject MTK Optimizations
+        run: |
+          cd skyline
+          
+          # Copia os arquivos de otimização para dentro da source tree do Skyline
+          mkdir -p app/src/main/cpp/skyline/mtk_hacks
+          cp -r ../mtk_spoof/skyline_mtk_optimizations/* app/src/main/cpp/skyline/mtk_hacks/
+          
+          # Modifica o CMakeLists para incluir nossos arquivos na compilação do Skyline
+          # Como o código do Skyline é complexo, adicionamos como uma biblioteca estática que é linkada ao core.
+          cat << 'EOF' >> app/src/main/cpp/CMakeLists.txt
+          
+          # --- INJEÇÃO MEDIATEK ---
+          add_library(mtk_optimizations STATIC 
+              skyline/mtk_hacks/mtk_tbdr_optimizer.cpp 
+              skyline/mtk_hacks/nce_memory_hack.cpp
+          )
+          target_include_directories(mtk_optimizations PRIVATE skyline)
+          target_link_libraries(skyline PUBLIC mtk_optimizations)
+          EOF
+          
+          # HACK de Integração Simples: 
+          # Injeta a chamada do hack de memória NCE no ponto de entrada do emulador (JNI)
+          sed -i '/JNI_OnLoad/a \    extern void Mtk_Install_NCE_Hack();\n    Mtk_Install_NCE_Hack();' app/src/main/cpp/skyline/app/app.cpp || true
+
+      - name: Build Skyline APK (Release)
+        run: |
+          cd skyline
+          chmod +x ./gradlew
+          # Skyline often requires specific local.properties for NDK path
+          echo "ndk.dir=$ANDROID_NDK_HOME" > local.properties
+          ./gradlew assembleRelease --stacktrace
+
+      - name: Upload Skyline APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Skyline-Edge-MediaTek-Edition
+          path: skyline/app/build/outputs/apk/release/*.apk
