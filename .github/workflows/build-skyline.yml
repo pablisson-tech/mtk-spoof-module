@@ -19,7 +19,6 @@ jobs:
         with:
           repository: skyline-emu/skyline
           path: skyline
-          submodules: false
           fetch-depth: 0
 
       - name: Setup Java 17
